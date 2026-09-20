@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bedava 2D Oyun Oyna!</title>
+<style>
+:root{
+  --bg:#090b10;--panel:#11151d;--panel2:#151a24;--line:#29313e;
+  --text:#f3f5f8;--muted:#8893a3;--accent:#7ca8ff;--accent2:#63d4b2;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.045;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:5px 5px}
+.app{height:100vh;display:flex}
+.sidebar{width:265px;flex:0 0 265px;background:rgba(15,19,26,.97);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;box-shadow:12px 0 35px rgba(0,0,0,.18)}
+.brand{padding:8px 10px 24px}
+.brand .small{font-size:11px;color:#6f7a8b;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.brand h1{font-size:21px;line-height:1.05;margin:0;letter-spacing:-.5px}
+.brand h1 span{color:var(--accent)}
+.section-label{font-size:10px;letter-spacing:1.7px;color:#687384;text-transform:uppercase;padding:4px 10px 8px}
+.navbtn{border:1px solid transparent;background:transparent;color:#aeb7c5;width:100%;padding:12px 12px;border-radius:11px;text-align:left;font-size:14px;cursor:pointer;display:flex;gap:11px;align-items:center;margin:3px 0;transition:.18s}
+.navbtn:hover{background:#171e28;color:#fff}
+.navbtn.active{background:linear-gradient(180deg,#1c2735,#18212d);border-color:#2b3748;color:#fff;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+.navicon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#1a2029;font-size:16px}
+.navbtn.active .navicon{background:#243149}
+.sidefoot{margin-top:auto;color:#596375;font-size:11px;line-height:1.55;padding:11px 10px 2px}
+.main{min-width:0;flex:1;display:flex;flex-direction:column}
+.topbar{height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(9,11,16,.9)}
+.breadcrumb{color:#778294;font-size:13px}.breadcrumb strong{color:#e6eaf0}
+.topnote{color:#566174;font-size:12px}
+.content{flex:1;overflow:auto;padding:28px}
+.view{display:none;max-width:1230px;margin:0 auto}.view.active{display:block}
+.homehero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:14px 2px 22px}
+.homehero h2{font-size:35px;line-height:1.05;margin:0 0 10px;letter-spacing:-1.3px}
+.homehero p{color:var(--muted);margin:0;max-width:680px;line-height:1.55}
+.livepill{display:inline-flex;align-items:center;gap:8px;border:1px solid #283442;border-radius:999px;padding:8px 12px;color:#9ca7b8;font-size:12px;background:#0f141c}
+.dot{width:7px;height:7px;border-radius:50%;background:#63d4b2;box-shadow:0 0 12px #63d4b2}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.card{position:relative;overflow:hidden;min-height:238px;background:linear-gradient(180deg,#151a23,#11161e);border:1px solid #28303d;border-radius:18px;padding:20px;cursor:pointer;transition:.22s}
+.card:hover{transform:translateY(-4px);border-color:#3a485b;box-shadow:0 20px 40px rgba(0,0,0,.18)}
+.card:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:-60px;bottom:-70px;background:rgba(124,168,255,.09)}
+.cardicon{font-size:42px}.tag{display:inline-block;margin-top:12px;color:#8ea9d9;background:#182337;border:1px solid #24344e;border-radius:999px;padding:5px 8px;font-size:10px;letter-spacing:.5px}
+.card h3{margin:10px 0 5px;font-size:18px}.card p{margin:0;color:#818c9b;line-height:1.5;font-size:13px;max-width:360px}.launch{margin-top:16px;font-weight:700;color:#9fc0ff;font-size:13px}
+.gamebox{background:linear-gradient(180deg,#11161e,#0e1218);border:1px solid #28313e;border-radius:18px;padding:17px;box-shadow:0 16px 50px rgba(0,0,0,.18)}
+.gamehead{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:2px 2px 15px}
+.gamehead h2{margin:0;font-size:20px}.subhint{font-size:12px;color:#788496;text-align:right}
+.canvaswrap{display:flex;justify-content:center;overflow:hidden;background:#080a0f;border-radius:13px;border:1px solid #222a36}
+canvas{display:block;max-width:100%;height:auto}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.btn{border:1px solid #2b3543;background:#171d26;color:#e8edf3;border-radius:9px;padding:9px 12px;font-weight:700;font-size:12px;cursor:pointer}
+.btn:hover{background:#1c2531}.btn.primary{background:#315d9e;border-color:#426da9}.statline{color:#96a2b2;font-size:12px;margin-left:auto}
+.levelbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}.badge{background:#182335;border:1px solid #293b57;padding:7px 10px;border-radius:9px;color:#a6c2f6;font-size:11px}
+.levelinput{width:75px;background:#11161e;border:1px solid #2c3542;border-radius:8px;color:#fff;padding:8px 9px;outline:none}
+.note{color:#737f90;font-size:11px;margin-top:10px}
+@media(max-width:1150px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}\n@media(max-width:950px){.sidebar{width:215px;flex-basis:215px}.cards{grid-template-columns:1fr}.homehero{align-items:flex-start;flex-direction:column}.topnote{display:none}}
+@media(max-width:650px){.sidebar{width:78px;flex-basis:78px;padding:12px 8px}.brand h1,.brand .small,.section-label,.navbtn span:last-child,.sidefoot{display:none}.brand{padding:8px 2px 18px;text-align:center}.navbtn{justify-content:center;padding:11px}.navicon{width:35px;height:35px}.content{padding:15px}.topbar{padding:0 14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="small">oyun merkezi</div>
+      <h1>Bedava <span>2D</span><br>Oyun Oyna!</h1>
+    </div>
+    <div class="section-label">Genel</div>
+    <button class="navbtn active" data-view="home"><span class="navicon">⌂</span><span>Ana Sayfa</span></button>
+    <div class="section-label" style="margin-top:13px">Oyunlar</div>
+    <button class="navbtn" data-view="pong"><span class="navicon">🏓</span><span>Neon Pong</span></button>
+    <button class="navbtn" data-view="snake"><span class="navicon">🐍</span><span>Yılan Arena</span></button>
+    <button class="navbtn" data-view="platform"><span class="navicon">★</span><span>Pixel Macera</span></button>
+<button class="navbtn" data-view="airwar"><span class="navicon">✈</span><span>Sky Strike</span></button>
+    <div class="sidefoot">4 oyun hazır.<br>Pixel Macera: 300 bölüm.</div>
+  </aside>
+  <main class="main">
+    <div class="topbar"><div class="breadcrumb">Oyunlar / <strong id="crumb">Ana Sayfa</strong></div><div class="topnote">Kurulum yok • tarayıcıda oyna</div></div>
+    <div class="content">
+      <section class="view active" id="home">
+        <div class="homehero">
+          <div><h2>Bir oyun seç ve oyna.</h2><p>Klasik arcade oyunları ve özgün bir 2D platform macerası tek yerde. Arayüzü sade tuttuk; oyunların kendisini öne çıkardık.</p></div>
+          <div class="livepill"><span class="dot"></span> Oynamaya hazır</div>
+        </div>
+        <div class="cards">
+          <div class="card" data-open="pong"><div class="cardicon">🏓</div><span class="tag">ARCADE</span><h3>Neon Pong</h3><p>Hızlanan top, skor yarışı ve bilgisayara karşı refleks mücadelesi.</p><div class="launch">Oyuna gir →</div></div>
+          <div class="card" data-open="snake"><div class="cardicon">🐍</div><span class="tag">KLASİK</span><h3>Yılan Arena</h3><p>Bildik yılan oyunu: yalnızca yönünü seç, yemleri topla ve büyü.</p><div class="launch">Oyuna gir →</div></div>
+          <div class="card" data-open="platform"><div class="cardicon">★</div><span class="tag">300 BÖLÜM</span><h3>Pixel Macera</h3><p>Koş, zıpla, yıldızları topla, yaratıkların üzerine bas ve bölüm sonuna ulaş.</p><div class="launch">Oyuna gir →</div></div>
+<div class="card" data-open="airwar"><div class="cardicon">✈️</div><span class="tag">AKSİYON</span><h3>Sky Strike</h3><p>Karşıdan gelen düşman uçaklarını mouse sol tıkla vur. 3 canını koru ve skorunu yükselt.</p><div class="launch">Oyuna gir →</div></div>
+        </div>
+      </section>
+
+      <section class="view" id="pong">
+        <div class="gamebox">
+          <div class="gamehead"><h2>🏓 Neon Pong</h2><div class="subhint">Hareket: ↑ ↓ veya W S<br>İlk 7 puan kazanır</div></div>
+          <div class="canvaswrap"><canvas id="pongCanvas" width="960" height="560"></canvas></div>
+          <div class="toolbar"><button class="btn primary" id="pongStart">Başlat / Yeniden Başlat</button><span class="statline" id="pongStatus">Oyunu başlatmak için butona bas.</span></div>
+        </div>
+      </section>
+
+      <section class="view" id="snake">
+        <div class="gamebox">
+          <div class="gamehead"><h2>🐍 Yılan Arena</h2><div class="subhint">Hareket: yalnızca yön tuşları<br>R = yeniden başlat</div></div>
+          <div class="canvaswrap"><canvas id="snakeCanvas" width="760" height="560"></canvas></div>
+          <div class="toolbar"><button class="btn primary" id="snakeStart">Başlat / Yeniden Başlat</button><span class="statline" id="snakeStatus">Oyunu başlatmak için butona bas.</span></div>
+        </div>
+      </section>
+
+
+      <section class="view" id="airwar">
+        <div class="gamebox">
+          <div class="gamehead">
+            <h2>✈️ Sky Strike</h2>
+            <div class="subhint">Sol tık = ateş et<br>3 can • Her düşman +1 skor</div>
+          </div>
+          <div class="levelbar">
+            <span class="badge">SKOR <b id="airScore">0</b></span>
+            <span class="badge">CAN <b id="airLives">3</b></span>
+            <span class="statline">Düşman uçaklarını vurarak hayatta kal.</span>
+          </div>
+          <div class="canvaswrap"><canvas id="airCanvas" width="1100" height="620"></canvas></div>
+          <div class="toolbar">
+            <button class="btn primary" id="airStart">Başlat / Yeniden Başlat</button>
+            <span class="statline" id="airStatus">Oyunu başlatmak için butona bas.</span>
+          </div>
+          <div class="note">Oyuncu uçağı otomatik olarak aşağı-yukarı hareket eder. Nişan almak için mouse'u kullan, sol tıklayarak ateş et.</div>
+        </div>
+      </section>
+
+      <section class="view" id="platform">
+        <div class="gamebox">
+          <div class="gamehead"><h2>★ Pixel Macera</h2><div class="subhint">← → hareket • ↑ / Space zıpla<br>Özgün karakterler • 300 bölüm</div></div>
+          <div class="levelbar">
+            <span class="badge">BÖLÜM <b id="levelNum">1</b> / 300</span>
+            <input class="levelinput" id="levelInput" type="number" min="1" max="300" value="1">
+            <button class="btn" id="loadLevel">Bölümü Aç</button>
+            <button class="btn" id="restartLevel">Yeniden Başlat</button>
+            <span class="statline">Can: <b id="lives">3</b> • Yıldız: <b id="coins">0</b></span>
+          </div>
+          <div class="canvaswrap"><canvas id="platCanvas" width="1100" height="620"></canvas></div>
+          <div class="note" id="platStatus">Amaç: bölümün sonundaki bayrağa ulaş. Düşersen bir can gider.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ---------------- NAV ---------------- */
+const viewNames={home:"Ana Sayfa",pong:"Neon Pong",snake:"Yılan Arena",platform:"Pixel Macera",airwar:"Sky Strike"};
+function openView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  document.getElementById("crumb").textContent=viewNames[id];
+}
+document.querySelectorAll(".navbtn").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.open)));
+
+/* ---------------- GLOBAL KEYS ---------------- */
+const keys={};
+window.addEventListener("keydown",e=>{
+  keys[e.key]=true;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","w","a","s","d"].includes(e.key)) e.preventDefault();
+});
+window.addEventListener("keyup",e=>keys[e.key]=false);
+
+/* ---------------- PONG ---------------- */
+const pc=document.getElementById("pongCanvas"), pctx=pc.getContext("2d");
+let pong={run:false,left:0,right:0,paddle:220,ai:220,ball:{x:480,y:280,vx:6,vy:3},raf:0};
+function pongResetBall(){
+  pong.ball={x:480,y:280,vx:(Math.random()<.5?-6:6),vy:(Math.random()*4-2)};
+}
+function pongDraw(){
+  pctx.clearRect(0,0,pc.width,pc.height);
+  const bg=pctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,"#0a0e15");bg.addColorStop(1,"#080a0f");pctx.fillStyle=bg;pctx.fillRect(0,0,960,560);
+  pctx.fillStyle="#131a25";for(let y=0;y<560;y+=31)pctx.fillRect(478,y,4,17);
+  pctx.fillStyle="#eef3fb";pctx.fillRect(28,pong.paddle,15,120);pctx.fillRect(917,pong.ai,15,120);
+  pctx.beginPath();pctx.arc(pong.ball.x,pong.ball.y,10,0,Math.PI*2);pctx.fill();
+  pctx.font="700 58px Arial";pctx.textAlign="center";pctx.fillText(pong.left,410,72);pctx.fillText(pong.right,550,72);
+}
+function pongLoop(){
+  if(!pong.run)return;
+  const up=keys.ArrowUp||keys.w,down=keys.ArrowDown||keys.s;
+  if(up)pong.paddle-=8;if(down)pong.paddle+=8;pong.paddle=Math.max(0,Math.min(440,pong.paddle));
+  pong.ai += ((pong.ball.y-60)-pong.ai)*0.085;pong.ai=Math.max(0,Math.min(440,pong.ai));
+  pong.ball.x+=pong.ball.vx;pong.ball.y+=pong.ball.vy;
+  if(pong.ball.y<10||pong.ball.y>550)pong.ball.vy*=-1;
+  if(pong.ball.x<48 && pong.ball.x>20 && pong.ball.y>pong.paddle-6 && pong.ball.y<pong.paddle+126){
+    const rel=(pong.ball.y-(pong.paddle+60))/60;
+    pong.ball.vx=Math.abs(pong.ball.vx)*1.045;pong.ball.vy+=rel*1.8;
+  }
+  if(pong.ball.x>910 && pong.ball.x<940 && pong.ball.y>pong.ai-6 && pong.ball.y<pong.ai+126){
+    const rel=(pong.ball.y-(pong.ai+60))/60;
+    pong.ball.vx=-Math.abs(pong.ball.vx)*1.045;pong.ball.vy+=rel*1.8;
+  }
+  if(pong.ball.x<0){pong.right++;pongResetBall();}
+  if(pong.ball.x>960){pong.left++;pongResetBall();}
+  if(pong.left>=7||pong.right>=7){
+    pong.run=false;
+    document.getElementById("pongStatus").textContent=(pong.left>=7?"Kazandın!":"Rakip kazandı.")+" Yeniden başlatabilirsin.";
+  }
+  pongDraw();pong.raf=requestAnimationFrame(pongLoop);
+}
+document.getElementById("pongStart").onclick=()=>{
+  pong.left=0;pong.right=0;pong.paddle=220;pong.ai=220;pongResetBall();pong.run=true;
+  document.getElementById("pongStatus").textContent="Oyun başladı — ↑ ↓ veya W S ile hareket et.";
+  cancelAnimationFrame(pong.raf);pongLoop();
+};
+pongDraw();
+
+/* ---------------- SNAKE: CLASSIC GRID ---------------- */
+const sc=document.getElementById("snakeCanvas"), sctx=sc.getContext("2d");
+const S={cols:38,rows:28,size:20,run:false,timer:0,snake:[],dir:{x:1,y:0},next:{x:1,y:0},food:{x:5,y:5},score:0};
+function snakeRandomFood(){
+  let f;
+  do{f={x:Math.floor(Math.random()*S.cols),y:Math.floor(Math.random()*S.rows)}}
+  while(S.snake.some(a=>a.x===f.x&&a.y===f.y));
+  S.food=f;
+}
+function snakeStart(){
+  S.snake=[{x:17,y:13},{x:16,y:13},{x:15,y:13},{x:14,y:13}];
+  S.dir={x:1,y:0};S.next={x:1,y:0};S.score=0;S.run=true;snakeRandomFood();
+  clearInterval(S.timer);S.timer=setInterval(snakeTick,108);snakeDraw();
+  document.getElementById("snakeStatus").textContent="Oyun başladı. Yön tuşlarını kullan.";
+}
+function snakeTick(){
+  S.dir=S.next;
+  const head={x:S.snake[0].x+S.dir.x,y:S.snake[0].y+S.dir.y};
+  const hitWall=head.x<0||head.y<0||head.x>=S.cols||head.y>=S.rows;
+  const hitSelf=S.snake.some(a=>a.x===head.x&&a.y===head.y);
+  if(hitWall||hitSelf){
+    S.run=false;clearInterval(S.timer);
+    document.getElementById("snakeStatus").textContent="Oyun bitti. Skor: "+S.score+" — tekrar başlatabilirsin.";
+    return;
+  }
+  S.snake.unshift(head);
+  if(head.x===S.food.x&&head.y===S.food.y){S.score++;snakeRandomFood()}else S.snake.pop();
+  snakeDraw();
+}
+function snakeDraw(){
+  sctx.fillStyle="#081015";sctx.fillRect(0,0,760,560);
+  for(let y=0;y<S.rows;y++)for(let x=0;x<S.cols;x++){sctx.fillStyle=(x+y)%2===0?"#0d151c":"#0b1319";sctx.fillRect(x*S.size,y*S.size,S.size,S.size)}
+  sctx.fillStyle="#f6c74e";sctx.beginPath();sctx.arc(S.food.x*S.size+10,S.food.y*S.size+10,7,0,Math.PI*2);sctx.fill();
+  S.snake.forEach((a,i)=>{sctx.fillStyle=i===0?"#75b9a5":"#3a7166";sctx.fillRect(a.x*S.size+2,a.y*S.size+2,16,16);if(i===0){sctx.fillStyle="#081015";sctx.fillRect(a.x*S.size+5,a.y*S.size+5,3,3);sctx.fillRect(a.x*S.size+12,a.y*S.size+5,3,3)}});
+  sctx.fillStyle="#d8e0e8";sctx.font="700 15px Arial";sctx.fillText("SKOR "+S.score,14,23);
+}
+window.addEventListener("keydown",e=>{
+  const m={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}}[e.key];
+  if(m&&!(m.x===-S.dir.x&&m.y===-S.dir.y))S.next=m;
+  if((e.key==="r"||e.key==="R")&&document.getElementById("snake").classList.contains("active"))snakeStart();
+});
+document.getElementById("snakeStart").onclick=snakeStart;
+snakeDraw();
+
+
+/* ---------------- SKY STRIKE ---------------- */
+const ac=document.getElementById("airCanvas"), actx=ac.getContext("2d");
+const AIR={
+  run:false,score:0,lives:3,raf:0,spawn:0,flash:0,
+  mouseX:550,mouseY:500,bullets:[],enemies:[],particles:[],
+  player:{x:520,y:505,w:70,h:34,speed:0},
+  starfield:[]
+};
+for(let i=0;i<85;i++) AIR.starfield.push({x:Math.random()*1100,y:Math.random()*620,s:Math.random()*2+0.5});
+function airReset(){
+  AIR.score=0;AIR.lives=3;AIR.spawn=0;AIR.flash=0;AIR.bullets=[];AIR.enemies=[];AIR.particles=[];
+  AIR.player={x:515,y:525,w:72,h:34,speed:0};
+  AIR.mouseX=550;AIR.mouseY=520;
+  document.getElementById("airScore").textContent=AIR.score;
+  document.getElementById("airLives").textContent=AIR.lives;
+}
+function airSpawnEnemy(){
+  const size=32+Math.random()*16;
+  AIR.enemies.push({
+    x:40+Math.random()*(1100-80), y:-60-size,
+    w:size*1.65,h:size, speed:1.8+Math.random()*1.7+Math.min(2.2,AIR.score*.015),
+    hp:1, reload:650+Math.random()*900, shotTimer:450+Math.random()*1000,
+    wiggle:Math.random()*Math.PI*2, wiggleSpeed:.02+Math.random()*.025
+  });
+}
+function airParticles(x,y,n=8){
+  for(let i=0;i<n;i++) AIR.particles.push({
+    x,y,dx:(Math.random()-.5)*5,dy:(Math.random()-.5)*5,life:1,size:2+Math.random()*4
+  });
+}
+function airShoot(){
+  if(!AIR.run)return;
+  const p=AIR.player;
+  AIR.bullets.push({x:p.x+36,y:p.y-4,vx:0,vy:-10,life:1});
+  airParticles(p.x+36,p.y-6,4);
+}
+function airHit(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function airPlayerHit(e){
+  const hitbox={x:AIR.player.x+5,y:AIR.player.y+4,w:62,h:27};
+  return airHit(hitbox,e);
+}
+function airEnemyShoot(e){
+  AIR.bullets.push({x:e.x+e.w/2,y:e.y+e.h,vx:0,vy:5.2,enemy:true,life:1});
+}
+function airGameOver(){
+  AIR.run=false;
+  document.getElementById("airStatus").textContent="Oyun bitti! Skor: "+AIR.score+" — Yeniden başlatabilirsin.";
+}
+function airUpdate(){
+  if(!AIR.run)return;
+  // move player toward mouse
+  AIR.player.x += (AIR.mouseX - (AIR.player.x+AIR.player.w/2))*0.16;
+  AIR.player.y += (AIR.mouseY - (AIR.player.y+AIR.player.h/2))*0.16;
+  AIR.player.x=Math.max(12,Math.min(1100-AIR.player.w-12,AIR.player.x));
+  AIR.player.y=Math.max(55,Math.min(620-AIR.player.h-14,AIR.player.y));
+
+  AIR.spawn++;
+  const spawnEvery=Math.max(28,72-Math.floor(AIR.score*.65));
+  if(AIR.spawn>=spawnEvery){AIR.spawn=0;airSpawnEnemy()}
+
+  AIR.bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.life-=.015});
+  AIR.bullets=AIR.bullets.filter(b=>b.y>-50&&b.y<680&&b.life>0);
+
+  for(const e of AIR.enemies){
+    e.y+=e.speed;
+    e.x += Math.sin(e.wiggle)*.9;
+    e.wiggle += e.wiggleSpeed;
+    e.shotTimer--;
+    if(e.shotTimer<=0){
+      airEnemyShoot(e);
+      e.shotTimer=e.reload;
+    }
+    if(airPlayerHit(e)){
+      e.dead=true;AIR.lives--;AIR.flash=12;airParticles(e.x+e.w/2,e.y+e.h/2,18);
+      document.getElementById("airLives").textContent=AIR.lives;
+      if(AIR.lives<=0){airGameOver();break;}
+      // brief reposition
+      AIR.player.x=515;AIR.player.y=525;
+    }
+  }
+
+  // player bullets -> enemies
+  for(const b of AIR.bullets) if(!b.enemy){
+    for(const e of AIR.enemies) if(!e.dead && airHit({x:b.x-4,y:b.y-10,w:8,h:16},e)){
+      b.life=0;e.hp--;e.dead=true;AIR.score++;
+      document.getElementById("airScore").textContent=AIR.score;
+      airParticles(e.x+e.w/2,e.y+e.h/2,18);
+      break;
+    }
+  }
+
+  // enemy bullets -> player
+  for(const b of AIR.bullets) if(b.enemy){
+    if(airHit({x:b.x-5,y:b.y-8,w:10,h:16},{x:AIR.player.x+5,y:AIR.player.y+4,w:62,h:27})){
+      b.life=0;AIR.lives--;AIR.flash=12;airParticles(AIR.player.x+36,AIR.player.y+18,16);
+      document.getElementById("airLives").textContent=AIR.lives;
+      if(AIR.lives<=0){airGameOver();break;}
+    }
+  }
+
+  AIR.enemies=AIR.enemies.filter(e=>!e.dead && e.y<690);
+  AIR.particles.forEach(q=>{q.x+=q.dx;q.y+=q.dy;q.dy+=.04;q.life-=.035});
+  AIR.particles=AIR.particles.filter(q=>q.life>0);
+  AIR.flash=Math.max(0,AIR.flash-1);
+}
+function drawAirPlayer(p){
+  // original jet shape
+  actx.save();actx.translate(p.x+p.w/2,p.y+p.h/2);
+  actx.fillStyle="#dce7f2";
+  actx.beginPath();actx.moveTo(0,-19);actx.lineTo(14,9);actx.lineTo(7,9);actx.lineTo(3,17);
+  actx.lineTo(-3,17);actx.lineTo(-7,9);actx.lineTo(-14,9);actx.closePath();actx.fill();
+  actx.fillStyle="#6fa0d7";actx.fillRect(-4,-9,8,16);
+  actx.fillStyle="#31445b";actx.fillRect(-4,-5,8,7);
+  actx.fillStyle="#ffb55d";actx.fillRect(-3,17,6,5);
+  actx.restore();
+}
+function drawAirEnemy(e){
+  actx.save();actx.translate(e.x+e.w/2,e.y+e.h/2);
+  actx.fillStyle="#c8646e";
+  actx.beginPath();actx.moveTo(0,18);actx.lineTo(13,-8);actx.lineTo(7,-7);actx.lineTo(3,-17);
+  actx.lineTo(-3,-17);actx.lineTo(-7,-7);actx.lineTo(-13,-8);actx.closePath();actx.fill();
+  actx.fillStyle="#7d3544";actx.fillRect(-4,-4,8,12);
+  actx.fillStyle="#f1e2e4";actx.fillRect(-3,-15,6,5);
+  actx.restore();
+}
+function airDraw(){
+  actx.clearRect(0,0,1100,620);
+  const bg=actx.createLinearGradient(0,0,0,620);bg.addColorStop(0,"#070b14");bg.addColorStop(1,"#111927");actx.fillStyle=bg;actx.fillRect(0,0,1100,620);
+  AIR.starfield.forEach((s,i)=>{s.y+=s.s*.25;if(s.y>620)s.y=0;actx.globalAlpha=.28+(i%4)*.13;actx.fillStyle="#d8e7ff";actx.fillRect(s.x,s.y,s.s,s.s)});
+  actx.globalAlpha=1;
+  // distant clouds
+  actx.fillStyle="rgba(80,105,140,.08)";
+  for(let i=0;i<8;i++) actx.fillRect((i*170-40)%1100,170+(i%3)*80,120,16);
+  AIR.enemies.forEach(drawAirEnemy);
+  AIR.bullets.forEach(b=>{
+    actx.fillStyle=b.enemy?"#ff7777":"#9ec7ff";
+    actx.fillRect(b.x-2,b.y-7,4,14);
+  });
+  AIR.particles.forEach(q=>{actx.globalAlpha=Math.max(0,q.life);actx.fillStyle="#ffd27a";actx.fillRect(q.x,q.y,q.size,q.size)});
+  actx.globalAlpha=1;
+  drawAirPlayer(AIR.player);
+  if(AIR.flash%2===1){actx.fillStyle="rgba(255,90,90,.16)";actx.fillRect(0,0,1100,620)}
+  // subtle crosshair
+  actx.strokeStyle="rgba(190,215,255,.4)";actx.lineWidth=1;actx.beginPath();
+  actx.arc(AIR.mouseX,AIR.mouseY,13,0,Math.PI*2);actx.moveTo(AIR.mouseX-20,AIR.mouseY);actx.lineTo(AIR.mouseX-6,AIR.mouseY);
+  actx.moveTo(AIR.mouseX+6,AIR.mouseY);actx.lineTo(AIR.mouseX+20,AIR.mouseY);
+  actx.moveTo(AIR.mouseX,AIR.mouseY-20);actx.lineTo(AIR.mouseX,AIR.mouseY-6);
+  actx.moveTo(AIR.mouseX,AIR.mouseY+6);actx.lineTo(AIR.mouseX,AIR.mouseY+20);actx.stroke();
+}
+function airLoop(){airUpdate();airDraw();AIR.raf=requestAnimationFrame(airLoop)}
+ac.addEventListener("mousemove",e=>{
+  const r=ac.getBoundingClientRect();
+  AIR.mouseX=(e.clientX-r.left)*(ac.width/r.width);
+  AIR.mouseY=(e.clientY-r.top)*(ac.height/r.height);
+});
+ac.addEventListener("mousedown",e=>{if(e.button===0)airShoot()});
+document.getElementById("airStart").onclick=()=>{
+  airReset();AIR.run=true;
+  document.getElementById("airStatus").textContent="Gökyüzü temiz! Sol tıkla ateş et.";
+};
+airReset();airLoop();
+
+/* ---------------- PIXEL MACERA ----------------
+   Original platformer visuals: no copyrighted characters/assets.
+   300 deterministic, progressively harder levels.
+*/
+const gc=document.getElementById("platCanvas"),g=gc.getContext("2d");
+const P={
+  level:1,lives:3,stars:0,cam:0,worldW:0,
+  player:{x:60,y:300,w:30,h:42,vx:0,vy:0,on:false,dir:1,frame:0},
+  plats:[],enemies:[],starsList:[],springs:[],goal:{x:0,y:0,w:26,h:100},
+  particles:[]
+};
+function rng(seed){let t=seed%2147483647;if(t<=0)t+=2147483646;return()=>{t=t*16807%2147483647;return(t-1)/2147483646}}
+function makeLevel(n){
+  P.level=n;P.plats=[];P.enemies=[];P.starsList=[];P.springs=[];P.particles=[];P.cam=0;
+  const r=rng(10007+n*7919), difficulty=Math.min(1,(n-1)/299);
+  let x=0,lastY=495;
+  // starting floor
+  P.plats.push({x:0,y:495,w:520,h:95,type:"ground"});
+  const chunks=15+Math.floor(n*0.085);
+  for(let i=0;i<chunks;i++){
+    const gap=45+Math.floor(r()*(60+130*difficulty));
+    const w=115+Math.floor(r()*(135-35*difficulty));
+    let y=lastY+(r()<.48?-1:1)*(25+Math.floor(r()*(85+45*difficulty)));
+    y=Math.max(300,Math.min(500,y));
+    x+=gap;
+    // occasional high platform + safe stepping platform
+    P.plats.push({x,y,w,h:25,type:"platform"});
+    if(i%5===2 && difficulty>.18){
+      const bx=x+w+55,x2=bx+95;
+      P.plats.push({x:bx,y:Math.max(300,y-75),w:105,h:25,type:"platform"});
+      x=bx+105;lastY=Math.max(300,y-75);
+    }else{lastY=y;x+=w}
+    // 2-4 stars
+    const count=1+Math.floor(r()*3);
+    for(let k=0;k<count;k++)P.starsList.push({x:x-w+28+k*31,y:y-28-(k%2)*21,got:false,bob:r()*6});
+    // enemies on larger platforms
+    if(i>0 && r() < 0.32+0.5*difficulty){
+      const ep=Math.max(0,x-w+18), ew=Math.max(65,w-36);
+      P.enemies.push({x:ep+Math.floor(r()*ew*.5),y:y-30,w:30,h:30,base:ep,end:ep+ew,v:0.8+2.0*difficulty+r()*.6,alive:true});
+    }
+    if(i%7===4 && difficulty>.25) P.springs.push({x:x-w+w*.72,y:y-14,w:24,h:14,power:13});
+  }
+  const endX=x+170;
+  P.plats.push({x:x+10,y:lastY+20,w:180,h:30,type:"platform"});
+  P.plats.push({x:endX,y:Math.min(505,lastY+55),w:360,h:100,type:"ground"});
+  P.worldW=endX+360;
+  P.goal={x:endX+280,y:Math.min(405,lastY-40),w:24,h:100};
+  P.player={x:80,y:420,w:30,h:42,vx:0,vy:0,on:false,dir:1,frame:0};
+  document.getElementById("levelNum").textContent=n;
+  document.getElementById("levelInput").value=n;
+  updatePUI();platformDraw();
+}
+function updatePUI(){document.getElementById("lives").textContent=P.lives;document.getElementById("coins").textContent=P.stars}
+function particle(x,y,dx,dy){P.particles.push({x,y,dx,dy,life:1})}
+function resetPlayer(){
+  for(let i=0;i<12;i++)particle(P.player.x+15,P.player.y+30,(Math.random()-.5)*3,(Math.random()-.5)*3);
+  P.lives--;
+  if(P.lives<=0){P.lives=3;P.stars=0;makeLevel(P.level);document.getElementById("platStatus").textContent="Canların bitti. Bölüm yeniden başlatıldı.";return}
+  P.player.x=Math.max(70,P.cam+80);P.player.y=300;P.player.vx=0;P.player.vy=0;
+  updatePUI();
+}
+function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function updatePlatform(){
+  if(!document.getElementById("platform").classList.contains("active")){requestAnimationFrame(updatePlatform);return}
+  const left=keys.ArrowLeft, right=keys.ArrowRight;
+  P.player.vx=left?-4.9:right?4.9:0;
+  if((keys.ArrowUp||keys[" "])&&P.player.on){P.player.vy=-12.4;P.player.on=false;particle(P.player.x+15,P.player.y+40,-1,0)}
+  P.player.vy=Math.min(P.player.vy+0.62,16);P.player.x+=P.player.vx;
+  const prevBottom=P.player.y+P.player.h;P.player.y+=P.player.vy;P.player.on=false;
+  for(const p of P.plats){
+    if(P.player.x+P.player.w>p.x&&P.player.x<p.x+p.w&&prevBottom<=p.y&&P.player.y+P.player.h>=p.y&&P.player.vy>=0){
+      P.player.y=p.y-P.player.h;P.player.vy=0;P.player.on=true;
+    }
+  }
+  for(const sp of P.springs)if(overlap(P.player,{x:sp.x,y:sp.y-9,w:sp.w,h:24})&&P.player.vy>=0){P.player.vy=-sp.power;P.player.on=false}
+  for(const e of P.enemies)if(e.alive){
+    e.x+=e.v;if(e.x<e.base||e.x>e.end)e.v*=-1;
+    if(overlap(P.player,e)){
+      if(P.player.vy>1 && P.player.y+P.player.h<e.y+20){e.alive=false;P.player.vy=-7;for(let i=0;i<10;i++)particle(e.x+15,e.y+15,(Math.random()-.5)*4,(Math.random()-.5)*4)}
+      else {resetPlayer();break}
+    }
+  }
+  P.starsList.forEach(s=>{
+    if(!s.got&&Math.abs(P.player.x+15-s.x)<28&&Math.abs(P.player.y+20-s.y)<35){
+      s.got=true;P.stars++;for(let i=0;i<5;i++)particle(s.x,s.y,(Math.random()-.5)*2,(Math.random()-.5)*2);updatePUI()
+    }
+  });
+  if(P.player.x>P.goal.x-18&&P.player.x<P.goal.x+65&&P.player.y+P.player.h>P.goal.y&&P.player.y<P.goal.y+P.goal.h){
+    if(P.level<300){P.level++;makeLevel(P.level);document.getElementById("platStatus").textContent="Bölüm tamamlandı! Yeni bölüm: "+P.level}
+    else{document.getElementById("platStatus").textContent="🏆 300. bölüm tamamlandı — tüm macerayı bitirdin!";P.player.vx=0}
+  }
+  if(P.player.y>690)resetPlayer();
+  P.cam=Math.max(0,Math.min(P.worldW-1100,P.player.x-360));
+  P.player.frame+=Math.abs(P.player.vx);
+  P.particles.forEach(q=>{q.x+=q.dx;q.y+=q.dy;q.dy+=.08;q.life-=.035});
+  P.particles=P.particles.filter(q=>q.life>0);
+  platformDraw();requestAnimationFrame(updatePlatform)
+}
+function drawBackground(){
+  const grd=g.createLinearGradient(0,0,0,620);grd.addColorStop(0,"#122136");grd.addColorStop(1,"#081015");g.fillStyle=grd;g.fillRect(0,0,1100,620);
+  // layered hills
+  g.fillStyle="#172a30";for(let i=-1;i<9;i++){const sx=i*190-(P.cam*.18%190);g.beginPath();g.moveTo(sx,470);g.quadraticCurveTo(sx+75,350,sx+150,470);g.lineTo(sx+190,620);g.lineTo(sx,620);g.fill()}
+  g.fillStyle="#1f3740";for(let i=-1;i<8;i++){const sx=i*260-(P.cam*.32%260);g.beginPath();g.moveTo(sx,500);g.quadraticCurveTo(sx+110,380,sx+220,500);g.lineTo(sx+260,620);g.lineTo(sx,620);g.fill()}
+  g.fillStyle="#d9e6ef";for(let i=0;i<55;i++){const x=(i*97)%1100,y=(i*47)%260;g.globalAlpha=.35+(i%3)*.15;g.fillRect(x,y,2,2)}g.globalAlpha=1
+}
+function platformDraw(){
+  drawBackground();g.save();g.translate(-P.cam,0);
+  P.plats.forEach(p=>{
+    g.fillStyle=p.type==="ground"?"#203c35":"#2b4850";g.fillRect(p.x,p.y,p.w,p.h);
+    g.fillStyle=p.type==="ground"?"#68a06e":"#6f9c79";g.fillRect(p.x,p.y,p.w,6);
+    g.fillStyle="rgba(0,0,0,.12)";for(let xx=p.x+14;xx<p.x+p.w-10;xx+=28)g.fillRect(xx,p.y+13,10,5);
+  });
+  // springs
+  P.springs.forEach(sp=>{g.fillStyle="#6db7cf";g.fillRect(sp.x,sp.y,sp.w,14);g.fillStyle="#dce7ef";g.fillRect(sp.x+5,sp.y-8,4,8);g.fillRect(sp.x+15,sp.y-8,4,8)});
+  // stars
+  P.starsList.forEach(s=>{if(s.got)return;const bob=Math.sin((Date.now()/250)+s.bob)*3;g.fillStyle="#f4c84d";g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?4.5:9;g.lineTo(s.x+Math.cos(a)*r,s.y+bob+Math.sin(a)*r)}g.closePath();g.fill();g.fillStyle="#fff3a5";g.fillRect(s.x-1,s.y-7+bob,2,5)});
+  // enemies
+  P.enemies.forEach(e=>{if(!e.alive)return;g.fillStyle="#b95f67";g.fillRect(e.x,e.y,e.w,e.h);g.fillStyle="#742f42";g.fillRect(e.x+3,e.y+22,e.w-6,5);g.fillStyle="#fff";g.fillRect(e.x+6,e.y+7,5,7);g.fillRect(e.x+19,e.y+7,5,7);g.fillStyle="#1a2029";g.fillRect(e.x+8,e.y+9,2,4);g.fillRect(e.x+21,e.y+9,2,4)});
+  // goal flag
+  g.fillStyle="#e2e9f0";g.fillRect(P.goal.x,P.goal.y,5,100);g.fillStyle="#77a9ff";g.beginPath();g.moveTo(P.goal.x+5,P.goal.y);g.lineTo(P.goal.x+48,P.goal.y+15);g.lineTo(P.goal.x+5,P.goal.y+30);g.closePath();g.fill();
+  drawHero(P.player);
+  // particles
+  P.particles.forEach(q=>{g.globalAlpha=Math.max(0,q.life);g.fillStyle="#d5e8ff";g.fillRect(q.x,q.y,4,4)});g.globalAlpha=1;
+  g.restore();
+  g.fillStyle="rgba(7,9,13,.65)";g.fillRect(0,0,1100,42);g.fillStyle="#f3f6fb";g.font="700 16px Arial";g.fillText("Bölüm "+P.level+"   •   ★ "+P.stars,18,27);
+}
+function drawHero(p){
+  const bob=p.on?0:Math.sin(Date.now()/90)*1.2, x=p.x,y=p.y+bob;
+  // original little adventurer
+  g.fillStyle="#e9edf2";g.fillRect(x+5,y+10,20,20);
+  g.fillStyle="#f1b28e";g.fillRect(x+8,y+2,14,13);
+  g.fillStyle="#4a668f";g.fillRect(x+6,y+2,18,5);
+  g.fillStyle="#1a212c";g.fillRect(x+9,y+7,3,3);g.fillRect(x+18,y+7,3,3);
+  g.fillStyle="#587db1";g.fillRect(x+3,y+27,24,10);
+  g.fillStyle="#32465f";g.fillRect(x+5,y+37,8,5);g.fillRect(x+18,y+37,8,5);
+  g.fillStyle="#dbe8f4";g.fillRect(x-2,y+29,5,9); // little backpack
+}
+document.getElementById("loadLevel").onclick=()=>{
+  let n=Math.max(1,Math.min(300,Number(document.getElementById("levelInput").value)||1));P.lives=3;makeLevel(n);
+  document.getElementById("platStatus").textContent="Bölüm "+n+" başladı.";
+};
+document.getElementById("restartLevel").onclick=()=>{P.lives=3;makeLevel(P.level);document.getElementById("platStatus").textContent="Bölüm yeniden başlatıldı.";};
+makeLevel(1);requestAnimationFrame(updatePlatform);
+</script>
+</body>
+</html>
